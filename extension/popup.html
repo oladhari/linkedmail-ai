@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkedMail AI</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">✉️ LinkedMail AI</div>
+      <div id="user-status" class="badge badge-free">Free</div>
+    </div>
+
+    <!-- Auth Screen (shown when not logged in) -->
+    <div id="auth-screen" class="screen hidden">
+      <p class="subtitle">Sign in to generate cold emails</p>
+      <input type="email" id="auth-email" placeholder="your@email.com" />
+      <input type="password" id="auth-password" placeholder="Password" />
+      <button class="btn btn-primary" id="btn-login">Sign In</button>
+      <button class="btn btn-ghost" id="btn-register">Create Free Account</button>
+      <div id="auth-error" class="error hidden"></div>
+    </div>
+
+    <!-- Main Screen (shown when logged in on a LinkedIn profile) -->
+    <div id="main-screen" class="screen hidden">
+      <div id="profile-card" class="profile-card hidden">
+        <div class="profile-name" id="profile-name">—</div>
+        <div class="profile-meta" id="profile-meta">—</div>
+      </div>
+
+      <div class="tone-selector">
+        <label>Tone</label>
+        <select id="tone-select">
+          <option value="professional">Professional</option>
+          <option value="friendly">Friendly</option>
+          <option value="direct">Direct & Short</option>
+          <option value="casual">Casual</option>
+        </select>
+      </div>
+
+      <div class="purpose-selector">
+        <label>Purpose</label>
+        <select id="purpose-select">
+          <option value="sales">Sales Outreach</option>
+          <option value="recruiting">Recruiting</option>
+          <option value="partnership">Partnership</option>
+          <option value="networking">Networking</option>
+        </select>
+      </div>
+
+      <textarea id="custom-context" placeholder="Add context (optional): your product, role, reason for reaching out..." rows="3"></textarea>
+
+      <button class="btn btn-primary" id="btn-generate">
+        <span id="btn-generate-text">Generate Email</span>
+        <span id="btn-spinner" class="spinner hidden"></span>
+      </button>
+
+      <div id="not-linkedin" class="info hidden">
+        Navigate to a LinkedIn profile page (<code>linkedin.com/in/...</code>) to generate an email.
+      </div>
+
+      <div id="result-box" class="result-box hidden">
+        <div class="result-header">
+          <span>Generated Email</span>
+          <button class="btn btn-copy" id="btn-copy">Copy</button>
+        </div>
+        <div id="email-output" class="email-output"></div>
+      </div>
+
+      <div id="usage-bar" class="usage-bar">
+        <span id="usage-text">0 / 5 emails used</span>
+        <button class="btn btn-upgrade" id="btn-upgrade">Upgrade to Pro — $19/mo</button>
+      </div>
+
+      <div id="generate-error" class="error hidden"></div>
+
+      <button class="btn btn-ghost btn-sm" id="btn-logout">Sign out</button>
+    </div>
+
+    <!-- Upgrade Success -->
+    <div id="upgrade-screen" class="screen hidden">
+      <div class="success-icon">🎉</div>
+      <h3>You're on Pro!</h3>
+      <p>Unlimited emails unlocked. Go crush those outreach goals.</p>
+      <button class="btn btn-primary" id="btn-back-from-upgrade">Start Generating</button>
+    </div>
+  </div>
+
+  <script src="src/popup.js"></script>
+</body>
+</html>

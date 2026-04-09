@@ -1,0 +1,12 @@
+# Environment variables — NEVER commit these
+backend/.env
+backend/**/*.db
+backend/**/*.db-shm
+backend/**/*.db-wal
+
+# Dependencies
+backend/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkedMail AI — Cold Email Generator for LinkedIn</title>
+  <meta name="description" content="Generate personalized cold emails from any LinkedIn profile in one click. Powered by AI. Used by sales reps, recruiters, and founders." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #0a66c2;
+      --blue-dark: #0957a8;
+      --purple: #7c3aed;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--gray-900);
+      background: white;
+      line-height: 1.6;
+    }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1px solid var(--gray-200);
+      z-index: 100;
+      padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--blue);
+    }
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gray-700);
+    }
+    .nav-links a { color: var(--gray-700); }
+    .btn-nav {
+      background: var(--blue);
+      color: white !important;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .btn-nav:hover { background: var(--blue-dark); text-decoration: none !important; }
+
+    /* SECTIONS */
+    section { padding: 80px 24px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+      text-align: center;
+      padding: 100px 24px 80px;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: #dbeafe;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: 99px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 900;
+      line-height: 1.15;
+      max-width: 800px;
+      margin: 0 auto 20px;
+      color: var(--gray-900);
+    }
+    .hero h1 span { color: var(--blue); }
+    .hero p {
+      font-size: 18px;
+      color: var(--gray-500);
+      max-width: 560px;
+      margin: 0 auto 36px;
+    }
+    .hero-cta {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--blue);
+      color: white;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: var(--blue-dark); text-decoration: none; }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      color: var(--gray-700);
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      border: 1px solid var(--gray-200);
+    }
+    .hero-note {
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--gray-500);
+    }
+
+    /* SOCIAL PROOF BAR */
+    .proof-bar {
+      background: var(--gray-50);
+      border-top: 1px solid var(--gray-200);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 18px 24px;
+      text-align: center;
+    }
+    .proof-bar p {
+      font-size: 14px;
+      color: var(--gray-500);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .proof-bar strong { color: var(--gray-900); }
+
+    /* HOW IT WORKS */
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--blue);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(24px, 3vw, 38px);
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 16px;
+      color: var(--gray-500);
+      max-width: 500px;
+      margin-bottom: 56px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 32px;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .step-num {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #dbeafe;
+      color: var(--blue);
+      font-weight: 800;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step h3 { font-size: 17px; font-weight: 700; }
+    .step p { font-size: 14px; color: var(--gray-500); }
+
+    /* FEATURES */
+    .features-bg { background: var(--gray-50); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .feature-icon { font-size: 28px; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; }
+    .feature-card p { font-size: 14px; color: var(--gray-500); }
+
+    /* EMAIL PREVIEW */
+    .preview-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    @media (max-width: 700px) { .preview-wrap { grid-template-columns: 1fr; } }
+    .preview-text .section-sub { margin-bottom: 24px; }
+    .preview-box {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    .preview-bar {
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-500);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .preview-tag {
+      background: #dcfce7;
+      color: #16a34a;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+    .preview-body {
+      padding: 20px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--gray-700);
+    }
+    .preview-body .subject {
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    /* PRICING */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .price-card {
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .price-card.featured {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px #dbeafe;
+    }
+    .price-tag {
+      display: inline-block;
+      background: var(--blue);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 99px;
+      margin-bottom: 4px;
+    }
+    .price-name { font-size: 20px; font-weight: 800; }
+    .price-amount { font-size: 36px; font-weight: 900; color: var(--gray-900); }
+    .price-amount span { font-size: 16px; font-weight: 500; color: var(--gray-500); }
+    .price-features { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .price-features li { font-size: 14px; color: var(--gray-700); display: flex; gap: 8px; }
+    .price-features li::before { content: "✓"; color: #16a34a; font-weight: 700; flex-shrink: 0; }
+    .btn-plan {
+      display: block;
+      text-align: center;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      margin-top: auto;
+    }
+    .btn-plan-free {
+      background: var(--gray-100);
+      color: var(--gray-700);
+    }
+    .btn-plan-pro {
+      background: var(--blue);
+      color: white;
+    }
+    .btn-plan-pro:hover { background: var(--blue-dark); text-decoration: none; }
+
+    /* FAQ */
+    .faq-list { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 0; }
+    .faq-item {
+      border-bottom: 1px solid var(--gray-200);
+      padding: 20px 0;
+    }
+    .faq-item h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .faq-item p { font-size: 14px; color: var(--gray-500); }
+
+    /* CTA FOOTER */
+    .cta-section {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--purple) 100%);
+      text-align: center;
+      color: white;
+    }
+    .cta-section h2 { font-size: clamp(24px, 3vw, 40px); font-weight: 900; margin-bottom: 16px; }
+    .cta-section p { font-size: 16px; opacity: 0.85; margin-bottom: 32px; }
+    .btn-white {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      color: var(--blue);
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .btn-white:hover { text-decoration: none; opacity: 0.9; }
+
+    /* FOOTER */
+    footer {
+      background: var(--gray-900);
+      color: var(--gray-500);
+      padding: 32px 24px;
+      text-align: center;
+      font-size: 13px;
+    }
+    footer a { color: var(--gray-500); }
+    footer a:hover { color: white; }
+    .footer-links { display: flex; gap: 20px; justify-content: center; margin-bottom: 12px; }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      section { padding: 60px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">✉️ LinkedMail AI</div>
+    <div class="nav-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="#install" class="btn-nav">Add to Chrome — Free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">AI-Powered Cold Outreach</div>
+  <h1>Generate personalized cold emails from any <span>LinkedIn profile</span> in one click</h1>
+  <p>Stop writing the same email over and over. LinkedMail AI reads the profile and writes a tailored email in seconds.</p>
+  <div class="hero-cta">
+    <a href="#install" class="btn-primary">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="none" stroke="white" stroke-width="2"/><path d="M13 2v7l3-3-3 3V2z" fill="none"/></svg>
+      Add to Chrome — It's Free
+    </a>
+    <a href="#preview" class="btn-secondary">See an example email →</a>
+  </div>
+  <p class="hero-note">Free: 5 emails/month &nbsp;·&nbsp; No credit card required &nbsp;·&nbsp; Pro: $19/month unlimited</p>
+</section>
+
+<!-- PROOF BAR -->
+<div class="proof-bar">
+  <p>Built for <strong>sales reps, recruiters, and founders</strong> who send cold outreach on LinkedIn every day &mdash; and are tired of writing the same email from scratch.</p>
+</div>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div class="container">
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">3 steps. Under 30 seconds.</h2>
+    <p class="section-sub">No copying, no pasting, no prompt engineering required.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Open any LinkedIn profile</h3>
+        <p>Navigate to the profile of the person you want to reach. The extension works on any public LinkedIn profile.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Choose tone & purpose</h3>
+        <p>Pick your goal (sales, recruiting, networking, partnership) and the tone that fits your style.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Click Generate &amp; Copy</h3>
+        <p>Get a fully personalized email with subject line in seconds. One click to copy it into your inbox.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="features-bg">
+  <div class="container">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything you need for better outreach</h2>
+    <p class="section-sub">No bloat. Just what actually moves the needle.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Truly personalized</h3>
+        <p>Uses their actual job title, company, and career summary — not generic filler text.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Works directly on LinkedIn</h3>
+        <p>No copy-pasting profile data into a tool. One click from any LinkedIn profile page.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3>Multiple tones &amp; purposes</h3>
+        <p>Professional, friendly, direct, or casual. Sales, recruiting, partnership, or networking.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>Your data stays yours</h3>
+        <p>Profile data is sent only to generate your email and never stored or sold.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <h3>One-click copy</h3>
+        <p>Generated email is ready to paste into Gmail, Outlook, or wherever you send from.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Add your own context</h3>
+        <p>Describe your product or reason for reaching out and the AI weaves it in naturally.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EMAIL PREVIEW -->
+<section id="preview">
+  <div class="container">
+    <div class="preview-wrap">
+      <div class="preview-text">
+        <div class="section-label">Example output</div>
+        <h2 class="section-title">What a generated email looks like</h2>
+        <p class="section-sub">This email was generated from a real LinkedIn profile in under 5 seconds. No editing needed.</p>
+        <a href="#install" class="btn-primary">Try it free →</a>
+      </div>
+      <div class="preview-box">
+        <div class="preview-bar">
+          Generated email
+          <span class="preview-tag">AI Generated</span>
+        </div>
+        <div class="preview-body">
+          <div class="subject">Subject: Quick question about scaling your SDR team at Acme Corp</div>
+          Hi Sarah,<br><br>
+          I noticed you recently moved into a VP of Sales role at Acme Corp — congrats on the promotion. Growing a team from 8 to 30 reps in under a year is no small feat.<br><br>
+          I'm reaching out because we've helped companies at your stage (Series B, rapid headcount growth) cut ramp time by 40% using AI-assisted call coaching. Given your background in SaaS sales enablement, I'd love to get your take on whether that's something your team is actively trying to solve.<br><br>
+          Would a 15-minute call this week make sense?<br><br>
+          Best,
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" style="background: var(--gray-50);">
+  <div class="container" style="text-align:center">
+    <div class="section-label">Pricing</div>
+    <h2 class="section-title">Simple, honest pricing</h2>
+    <p class="section-sub" style="margin: 0 auto 48px;">Start free. Upgrade when you're ready.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-name">Free</div>
+        <div class="price-amount">$0 <span>/ month</span></div>
+        <ul class="price-features">
+          <li>5 emails per month</li>
+          <li>All tones &amp; purposes</li>
+          <li>Custom context input</li>
+          <li>One-click copy</li>
+        </ul>
+        <a href="#install" class="btn-plan btn-plan-free">Add to Chrome Free</a>
+      </div>
+      <div class="price-card featured">
+        <span class="price-tag">Most Popular</span>
+        <div class="price-name">Pro</div>
+        <div class="price-amount">$19 <span>/ month</span></div>
+        <ul class="price-features">
+          <li>Unlimited emails</li>
+          <li>All tones &amp; purposes</li>
+          <li>Custom context input</li>
+          <li>Priority generation speed</li>
+          <li>Cancel anytime</li>
+        </ul>
+        <a href="#install" class="btn-plan btn-plan-pro">Get Pro</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="container" style="text-align:center">
+    <div class="section-label">FAQ</div>
+    <h2 class="section-title">Common questions</h2>
+    <br>
+    <div class="faq-list" style="text-align:left">
+      <div class="faq-item">
+        <h3>Does this work on all LinkedIn profiles?</h3>
+        <p>Yes. It works on any public LinkedIn profile at linkedin.com/in/... Private or hidden profiles may have less data, but the extension will use whatever is visible.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Is my OpenAI key exposed?</h3>
+        <p>No. All AI calls go through our backend server. Your API keys are never in the extension code.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Does the free plan auto-upgrade to paid?</h3>
+        <p>Never. You stay on the free plan until you choose to upgrade. No hidden charges.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Can I cancel Pro anytime?</h3>
+        <p>Yes. Cancel from the extension or email us and you'll stop being charged at the end of the billing period.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Is LinkedIn data stored?</h3>
+        <p>No. Profile data is used only to generate your email in the moment and is never logged or stored on our servers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="install">
+  <div class="container">
+    <h2>Start writing better cold emails today</h2>
+    <p>Free to install. 5 emails/month at no cost. No credit card required.</p>
+    <a href="https://chrome.google.com/webstore" class="btn-white">
+      Add to Chrome — It's Free
+    </a>
+    <p style="margin-top:16px; font-size:13px; opacity:0.7">Pro plan: $19/month · Cancel anytime</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-links">
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="terms.html">Terms of Service</a>
+    <a href="mailto:support@linkedmailai.com">Support</a>
+  </div>
+  <p>© 2025 LinkedMail AI. All rights reserved.</p>
+</footer>
+
+</body>
+</html>
