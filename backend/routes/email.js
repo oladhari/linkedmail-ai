@@ -37,33 +37,39 @@ router.post("/generate", requireAuth, async (req, res) => {
   };
 
   const profileSummary = [
-    profile.name && `Name: ${profile.name}`,
-    profile.currentTitle && `Title: ${profile.currentTitle}`,
-    profile.currentCompany && `Company: ${profile.currentCompany}`,
-    profile.headline && `Headline: ${profile.headline}`,
+    profile.name && `Full Name: ${profile.name}`,
+    profile.currentTitle && `Current Title: ${profile.currentTitle}`,
+    profile.currentCompany && `Current Company: ${profile.currentCompany}`,
+    profile.headline && `LinkedIn Headline: ${profile.headline}`,
     profile.location && `Location: ${profile.location}`,
-    profile.about && `About: ${profile.about}`,
+    profile.about && `About/Summary: ${profile.about}`,
+    profile.experiences && profile.experiences.length && `Experience History:\n  - ${profile.experiences.join("\n  - ")}`,
+    profile.education && `Education: ${profile.education}`,
+    profile.skills && `Skills: ${profile.skills}`,
   ]
     .filter(Boolean)
     .join("\n");
 
-  const prompt = `You are an expert cold email writer. Write a personalized cold email based on the LinkedIn profile below.
+  const prompt = `You are a world-class cold email copywriter. Write a highly personalized cold email using ONLY the real data from the LinkedIn profile below.
 
-LinkedIn Profile:
+LinkedIn Profile Data:
 ${profileSummary}
 
 Purpose: ${purposeMap[purpose] || purpose}
 Tone: ${toneMap[tone] || tone}
-${context ? `Additional context from the sender: ${context}` : ""}
+${context ? `Sender's context (product/reason/company): ${context}` : ""}
 
-Requirements:
-- Start with a subject line (format: "Subject: ...")
-- Leave a blank line, then write the email body
-- Personalize based on the person's actual role, company, and background
-- Keep it concise (150-250 words unless tone is "direct")
-- End with a clear, single call to action
-- Do NOT use generic openers like "I hope this email finds you well"
-- Do NOT use placeholders like [Your Name] — use "I" and leave the sign-off as just "Best,"`;
+STRICT RULES — violating any of these makes the email useless:
+1. Use the person's ACTUAL first name from the profile (e.g. "Hi Michel," not "Hi [Name],")
+2. NEVER use placeholders like [Name], [Company], [Your Position], [X years] — use real data or omit
+3. Reference their REAL company, title, or specific detail from their background
+4. If you mention years of experience, calculate it from their experience history
+5. Subject line must be specific to this person — not generic
+6. Do NOT say "I hope this email finds you well" or any filler opener
+7. End with ONE clear call to action (e.g. "Would you be open to a 15-min call this week?")
+8. Sign off with just "Best," — no name, no placeholders
+9. Format: "Subject: ..." then blank line then email body
+10. Length: 100-180 words (short and punchy wins)`;
 
   try {
     const completion = await openai.chat.completions.create({

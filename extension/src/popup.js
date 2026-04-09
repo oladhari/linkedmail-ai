@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:3001"; // Change to your deployed URL before publishing
+const API_BASE = "https://modest-wonder-production-84f9.up.railway.app"; // Change to your deployed URL before publishing
 
 // --- DOM refs ---
 const authScreen = document.getElementById("auth-screen");
@@ -143,6 +143,7 @@ async function detectLinkedInProfile() {
 
   try {
     currentProfile = await chrome.tabs.sendMessage(tab.id, { action: "scrapeProfile" });
+    console.log("Scraped profile:", JSON.stringify(currentProfile, null, 2));
     if (currentProfile?.name) {
       profileName.textContent = currentProfile.name;
       profileMeta.textContent = [currentProfile.currentTitle, currentProfile.currentCompany]
