@@ -5,11 +5,8 @@ const authScreen = document.getElementById("auth-screen");
 const mainScreen = document.getElementById("main-screen");
 const upgradeScreen = document.getElementById("upgrade-screen");
 
-const authEmail = document.getElementById("auth-email");
-const authPassword = document.getElementById("auth-password");
 const authError = document.getElementById("auth-error");
-const btnLogin = document.getElementById("btn-login");
-const btnRegister = document.getElementById("btn-register");
+const btnGoogleSignin = document.getElementById("btn-google-signin");
 const btnLogout = document.getElementById("btn-logout");
 
 const profileCard = document.getElementById("profile-card");
@@ -58,33 +55,38 @@ function show(screen) {
 }
 
 // --- Auth ---
-btnLogin.addEventListener("click", () => doAuth("login"));
-btnRegister.addEventListener("click", () => doAuth("register"));
+btnGoogleSignin.addEventListener("click", signInWithGoogle);
 btnLogout.addEventListener("click", logout);
 
-async function doAuth(mode) {
-  const email = authEmail.value.trim();
-  const password = authPassword.value.trim();
-  if (!email || !password) return showError(authError, "Email and password required.");
+async function signInWithGoogle() {
+  btnGoogleSignin.disabled = true;
+  btnGoogleSignin.textContent = "Signing in...";
+  hideError(authError);
 
-  setLoading(btnLogin, true);
   try {
-    const res = await fetch(`${API_BASE}/auth/${mode}`, {
+    const accessToken = await new Promise((resolve, reject) => {
+      chrome.identity.getAuthToken({ interactive: true }, (token) => {
+        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+        else resolve(token);
+      });
+    });
+
+    const res = await fetch(`${API_BASE}/auth/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ access_token: accessToken }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Auth failed");
+    if (!res.ok) throw new Error(data.error || "Google sign-in failed");
 
     currentToken = data.token;
     await chrome.storage.local.set({ token: currentToken });
-    hideError(authError);
     await loadUserAndShow();
   } catch (err) {
     showError(authError, err.message);
   } finally {
-    setLoading(btnLogin, false);
+    btnGoogleSignin.disabled = false;
+    btnGoogleSignin.innerHTML = '<img src="icons/google.svg" width="18" height="18" alt="Google" /> Sign in with Google';
   }
 }
 

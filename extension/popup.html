@@ -16,11 +16,15 @@
 
     <!-- Auth Screen (shown when not logged in) -->
     <div id="auth-screen" class="screen hidden">
-      <p class="subtitle">Sign in to generate cold emails</p>
-      <input type="email" id="auth-email" placeholder="your@email.com" />
-      <input type="password" id="auth-password" placeholder="Password" />
-      <button class="btn btn-primary" id="btn-login">Sign In</button>
-      <button class="btn btn-ghost" id="btn-register">Create Free Account</button>
+      <div class="auth-welcome">
+        <div class="auth-icon">✉️</div>
+        <h2>LinkedMail AI</h2>
+        <p>Generate personalized cold emails from any LinkedIn profile.</p>
+      </div>
+      <button class="btn btn-google" id="btn-google-signin">
+        <img src="icons/google.svg" width="18" height="18" alt="Google" />
+        Sign in with Google
+      </button>
       <div id="auth-error" class="error hidden"></div>
     </div>
 

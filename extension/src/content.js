@@ -78,30 +78,45 @@
       result.about = aboutLines.join(" ").slice(0, 800);
     }
 
-    // ── EXPERIENCE ────────────────────────────────────────────────────
-    const expIdx = lines.findIndex(l => l.toLowerCase() === "experience");
-    if (expIdx >= 0) {
-      const expLines = [];
-      for (let i = expIdx + 1; i < Math.min(expIdx + 40, lines.length); i++) {
-        const line = lines[i];
-        if (line.toLowerCase().match(/^(education|skills|services|activity|licenses)/)) break;
-        expLines.push(line);
-      }
-      // Group into experiences (role + company + duration patterns)
-      let current = [];
-      expLines.forEach(line => {
-        if (line.match(/\d+\s*(yr|mo|year|month)/i)) {
-          if (current.length > 0) {
-            result.experiences.push(current.slice(0, 3).join(" | "));
-            current = [];
-          }
-        } else if (line.length > 3 && line.length < 120) {
-          current.push(line);
+    // ── EXPERIENCE (DOM-based via data-testid) ────────────────────────
+    const descSpans = document.querySelectorAll('[data-testid="expandable-text-box"]');
+    result._debug.descSpanCount = descSpans.length;
+
+    descSpans.forEach(span => {
+      if (result.experiences.length >= 3) return;
+
+      // Only process experience entries — they always have a date range in their container
+      let containerCheck = span.parentElement;
+      let hasDate = false;
+      for (let d = 0; d < 10; d++) {
+        if (!containerCheck) break;
+        if (containerCheck.textContent.match(/\d{4}\s*[-–]\s*(Present|\d{4})/i)) {
+          hasDate = true;
+          break;
         }
-      });
-      if (current.length > 0) result.experiences.push(current.slice(0, 3).join(" | "));
-      result.experiences = result.experiences.slice(0, 4);
-    }
+        containerCheck = containerCheck.parentElement;
+      }
+      if (!hasDate) return;
+
+      const desc = span.textContent.replace(/…\s*more\s*$/i, "").trim().slice(0, 300);
+
+      // Walk up to find the job card container (has title + company paragraphs)
+      let container = span.parentElement;
+      for (let d = 0; d < 8; d++) {
+        if (!container) break;
+        const paras = container.querySelectorAll("p");
+        if (paras.length >= 2) {
+          const title = paras[0]?.textContent?.trim() || "";
+          const company = (paras[1]?.textContent || "").replace(/\s*·.*$/, "").trim();
+          if (title.length > 3 && !title.match(/^\d/) && !title.match(/\d{4}/)) {
+            const entry = company && company !== title ? `${title} at ${company}` : title;
+            result.experiences.push(desc ? `${entry}: ${desc}` : entry);
+            return;
+          }
+        }
+        container = container.parentElement;
+      }
+    });
 
     // ── LOCATION ──────────────────────────────────────────────────────
     // Location usually appears near the top, contains country/city words

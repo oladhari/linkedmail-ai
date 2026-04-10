@@ -43,6 +43,33 @@ router.post("/login", async (req, res) => {
   res.json({ token });
 });
 
+// POST /auth/google — sign in with Google access token
+router.post("/google", async (req, res) => {
+  const { access_token } = req.body;
+  if (!access_token) return res.status(400).json({ error: "Missing access token" });
+
+  try {
+    const googleRes = await fetch(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${access_token}`);
+    if (!googleRes.ok) return res.status(401).json({ error: "Invalid Google token" });
+    const googleUser = await googleRes.json();
+    if (!googleUser.email) return res.status(401).json({ error: "Could not get email from Google" });
+
+    let user = db.prepare("SELECT * FROM users WHERE email = ?").get(googleUser.email.toLowerCase());
+    if (!user) {
+      const result = db.prepare(
+        "INSERT INTO users (email, name, picture) VALUES (?, ?, ?)"
+      ).run(googleUser.email.toLowerCase(), googleUser.name || "", googleUser.picture || "");
+      user = db.prepare("SELECT * FROM users WHERE id = ?").get(result.lastInsertRowid);
+    }
+
+    const token = makeToken(user.id);
+    res.json({ token });
+  } catch (err) {
+    console.error("Google auth error:", err);
+    res.status(500).json({ error: "Google sign-in failed" });
+  }
+});
+
 // GET /auth/me — returns user info for the extension
 router.get("/me", requireAuth, (req, res) => {
   const { id, email, plan, usage_count } = req.user;

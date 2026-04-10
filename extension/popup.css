@@ -264,3 +264,32 @@ h3 {
   color: #6b7280;
   font-size: 12px;
 }
+
+/* Auth welcome */
+.auth-welcome {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.auth-icon { font-size: 36px; margin-bottom: 8px; }
+.auth-welcome h2 { font-size: 18px; margin: 0 0 6px; color: #111; }
+.auth-welcome p { font-size: 12px; color: #6b7280; margin: 0; }
+
+/* Google sign-in button */
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  background: #fff;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-google:hover { background: #f8f9fa; }
+.btn-google:disabled { opacity: 0.6; cursor: not-allowed; }
