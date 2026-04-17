@@ -1,6 +1,6 @@
 const express = require("express");
 const OpenAI = require("openai");
-const db = require("../db/database");
+const { db } = require("../db/database");
 const requireAuth = require("../middleware/auth");
 
 const router = express.Router();
@@ -8,12 +8,10 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const FREE_LIMIT = 5;
 
-// POST /email/generate
 router.post("/generate", requireAuth, async (req, res) => {
   const user = req.user;
 
-  // Enforce free tier limit
-  if (user.plan !== "pro" && user.usage_count >= FREE_LIMIT) {
+  if (user.plan !== "pro" && Number(user.usage_count) >= FREE_LIMIT) {
     return res.status(403).json({
       error: `Free plan limit reached (${FREE_LIMIT} emails/month). Please upgrade to Pro.`,
     });
@@ -43,12 +41,10 @@ router.post("/generate", requireAuth, async (req, res) => {
     profile.headline && `LinkedIn Headline: ${profile.headline}`,
     profile.location && `Location: ${profile.location}`,
     profile.about && `About/Summary: ${profile.about}`,
-    profile.experiences && profile.experiences.length && `Experience History:\n  - ${profile.experiences.join("\n  - ")}`,
+    profile.experiences?.length && `Experience:\n  - ${profile.experiences.join("\n  - ")}`,
     profile.education && `Education: ${profile.education}`,
     profile.skills && `Skills: ${profile.skills}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  ].filter(Boolean).join("\n");
 
   const prompt = `You are a world-class cold email copywriter. Write a highly personalized cold email using ONLY the real data from the LinkedIn profile below.
 
@@ -59,17 +55,16 @@ Purpose: ${purposeMap[purpose] || purpose}
 Tone: ${toneMap[tone] || tone}
 ${context ? `Sender's context (product/reason/company): ${context}` : ""}
 
-STRICT RULES — violating any of these makes the email useless:
-1. Use the person's ACTUAL first name from the profile (e.g. "Hi Michel," not "Hi [Name],")
-2. NEVER use placeholders like [Name], [Company], [Your Position], [X years] — use real data or omit
+STRICT RULES:
+1. Use the person's ACTUAL first name (e.g. "Hi Michel," not "Hi [Name],")
+2. NEVER use placeholders like [Name], [Company], [Your Position]
 3. Reference their REAL company, title, or specific detail from their background
-4. If you mention years of experience, calculate it from their experience history
-5. Subject line must be specific to this person — not generic
-6. Do NOT say "I hope this email finds you well" or any filler opener
-7. End with ONE clear call to action (e.g. "Would you be open to a 15-min call this week?")
-8. Sign off with just "Best," — no name, no placeholders
-9. Format: "Subject: ..." then blank line then email body
-10. Length: 100-180 words (short and punchy wins)`;
+4. Subject line must be specific to this person
+5. Do NOT say "I hope this email finds you well"
+6. End with ONE clear call to action
+7. Sign off with just "Best,"
+8. Format: "Subject: ..." then blank line then email body
+9. Length: 100-180 words`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -81,11 +76,13 @@ STRICT RULES — violating any of these makes the email useless:
 
     const email = completion.choices[0].message.content.trim();
 
-    // Increment usage
-    db.prepare("UPDATE users SET usage_count = usage_count + 1 WHERE id = ?").run(user.id);
-    const updatedUser = db.prepare("SELECT usage_count FROM users WHERE id = ?").get(user.id);
+    await db.execute({
+      sql: "UPDATE users SET usage_count = usage_count + 1 WHERE id = ?",
+      args: [user.id],
+    });
+    const rs = await db.execute({ sql: "SELECT usage_count FROM users WHERE id = ?", args: [user.id] });
 
-    res.json({ email, usage_count: updatedUser.usage_count });
+    res.json({ email, usage_count: Number(rs.rows[0].usage_count) });
   } catch (err) {
     console.error("OpenAI error:", err.message);
     res.status(500).json({ error: "Failed to generate email. Please try again." });

@@ -1,6 +1,6 @@
 const express = require("express");
 const Stripe = require("stripe");
-const db = require("../db/database");
+const { db } = require("../db/database");
 const requireAuth = require("../middleware/auth");
 
 const router = express.Router();
@@ -16,7 +16,7 @@ router.post("/checkout", requireAuth, async (req, res) => {
     if (!customerId) {
       const customer = await stripe.customers.create({ email: user.email });
       customerId = customer.id;
-      db.prepare("UPDATE users SET stripe_customer_id = ? WHERE id = ?").run(customerId, user.id);
+      await db.execute({ sql: "UPDATE users SET stripe_customer_id = ? WHERE id = ?", args: [customerId, user.id] });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -78,16 +78,18 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
     const customerId = session.customer;
     const subscriptionId = session.subscription;
 
-    db.prepare(
-      "UPDATE users SET plan = 'pro', stripe_subscription_id = ? WHERE stripe_customer_id = ?"
-    ).run(subscriptionId, customerId);
+    await db.execute({
+      sql: "UPDATE users SET plan = 'pro', stripe_subscription_id = ? WHERE stripe_customer_id = ?",
+      args: [subscriptionId, customerId],
+    });
   }
 
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object;
-    db.prepare(
-      "UPDATE users SET plan = 'free' WHERE stripe_subscription_id = ?"
-    ).run(subscription.id);
+    await db.execute({
+      sql: "UPDATE users SET plan = 'free' WHERE stripe_subscription_id = ?",
+      args: [subscription.id],
+    });
   }
 
   res.json({ received: true });
