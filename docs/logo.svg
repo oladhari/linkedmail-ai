@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Blue rounded background -->
+  <rect width="200" height="200" rx="40" ry="40" fill="#0a66c2"/>
+
+  <!-- White envelope body -->
+  <rect x="35" y="65" width="130" height="90" rx="8" ry="8" fill="white"/>
+
+  <!-- Red envelope flap (triangle) -->
+  <polygon points="35,65 100,120 165,65" fill="#e03030"/>
+
+  <!-- White envelope flap outline to separate from body -->
+  <polyline points="35,155 90,108 100,116 110,108 165,155" fill="none" stroke="#e5e7eb" stroke-width="1.5"/>
+
+  <!-- Envelope left and right lines -->
+  <polyline points="35,65 35,155 165,155 165,65" fill="none" stroke="white" stroke-width="2"/>
+</svg>
