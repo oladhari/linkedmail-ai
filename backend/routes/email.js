@@ -67,14 +67,26 @@ STRICT RULES:
 9. Length: 100-180 words`;
 
   try {
-    const completion = await openai.chat.completions.create({
+    const stream = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
       max_tokens: 500,
+      stream: true,
     });
 
-    const email = completion.choices[0].message.content.trim();
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    let fullText = "";
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || "";
+      if (content) {
+        fullText += content;
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
 
     await db.execute({
       sql: "UPDATE users SET usage_count = usage_count + 1 WHERE id = ?",
@@ -82,10 +94,16 @@ STRICT RULES:
     });
     const rs = await db.execute({ sql: "SELECT usage_count FROM users WHERE id = ?", args: [user.id] });
 
-    res.json({ email, usage_count: Number(rs.rows[0].usage_count) });
+    res.write(`data: ${JSON.stringify({ done: true, usage_count: Number(rs.rows[0].usage_count) })}\n\n`);
+    res.end();
   } catch (err) {
     console.error("OpenAI error:", err.message);
-    res.status(500).json({ error: "Failed to generate email. Please try again." });
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Failed to generate email. Please try again." });
+    } else {
+      res.write(`data: ${JSON.stringify({ error: "Generation failed. Please try again." })}\n\n`);
+      res.end();
+    }
   }
 });
 

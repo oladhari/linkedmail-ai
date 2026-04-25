@@ -39,18 +39,30 @@ let currentProfile = null;
 let currentUser = null;
 
 // --- Init ---
+const loadingScreen = document.getElementById("loading-screen");
+
 async function init() {
-  const { token } = await chrome.storage.local.get("token");
-  if (token) {
-    currentToken = token;
-    await loadUserAndShow();
-  } else {
+  show(loadingScreen);
+  const { token, cachedUser } = await chrome.storage.local.get(["token", "cachedUser"]);
+  if (!token) {
     show(authScreen);
+    return;
+  }
+  currentToken = token;
+  if (cachedUser) {
+    // Show instantly from cache, then validate token in background
+    currentUser = cachedUser;
+    updateUsageUI();
+    show(mainScreen);
+    await detectLinkedInProfile();
+    refreshUserInBackground();
+  } else {
+    await loadUserAndShow();
   }
 }
 
 function show(screen) {
-  [authScreen, mainScreen, upgradeScreen].forEach(s => s.classList.add("hidden"));
+  [authScreen, mainScreen, upgradeScreen, loadingScreen].forEach(s => s.classList.add("hidden"));
   screen.classList.remove("hidden");
 }
 
@@ -58,30 +70,50 @@ function show(screen) {
 btnGoogleSignin.addEventListener("click", signInWithGoogle);
 btnLogout.addEventListener("click", logout);
 
+async function getGoogleToken(interactive) {
+  return new Promise((resolve, reject) => {
+    chrome.identity.getAuthToken({ interactive }, (token) => {
+      if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+      else resolve(token);
+    });
+  });
+}
+
+function removeCachedToken(token) {
+  return new Promise((resolve) => chrome.identity.removeCachedAuthToken({ token }, resolve));
+}
+
 async function signInWithGoogle() {
   btnGoogleSignin.disabled = true;
   btnGoogleSignin.textContent = "Signing in...";
   hideError(authError);
 
   try {
-    const accessToken = await new Promise((resolve, reject) => {
-      chrome.identity.getAuthToken({ interactive: true }, (token) => {
-        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-        else resolve(token);
-      });
-    });
+    let accessToken = await getGoogleToken(true);
 
-    const res = await fetch(`${API_BASE}/auth/google`, {
+    let res = await fetch(`${API_BASE}/auth/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ access_token: accessToken }),
     });
+
+    // Cached token may be expired — remove it and retry once with a fresh one
+    if (!res.ok) {
+      await removeCachedToken(accessToken);
+      accessToken = await getGoogleToken(true);
+      res = await fetch(`${API_BASE}/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_token: accessToken }),
+      });
+    }
+
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Google sign-in failed");
+    if (!res.ok) throw new Error(data.error || "Sign-in failed");
 
     currentToken = data.token;
     await chrome.storage.local.set({ token: currentToken });
-    await loadUserAndShow();
+    await loadUserAndShow(); // also saves cachedUser
   } catch (err) {
     showError(authError, err.message);
   } finally {
@@ -91,7 +123,7 @@ async function signInWithGoogle() {
 }
 
 async function logout() {
-  await chrome.storage.local.remove("token");
+  await chrome.storage.local.remove(["token", "cachedUser"]);
   currentToken = null;
   currentUser = null;
   currentProfile = null;
@@ -106,11 +138,29 @@ async function loadUserAndShow() {
     });
     if (!res.ok) throw new Error("Session expired");
     currentUser = await res.json();
+    await chrome.storage.local.set({ cachedUser: currentUser });
     updateUsageUI();
     show(mainScreen);
     await detectLinkedInProfile();
   } catch {
     await logout();
+  }
+}
+
+async function refreshUserInBackground() {
+  try {
+    const res = await fetch(`${API_BASE}/auth/me`, {
+      headers: { Authorization: `Bearer ${currentToken}` },
+    });
+    if (res.ok) {
+      currentUser = await res.json();
+      await chrome.storage.local.set({ cachedUser: currentUser });
+      updateUsageUI();
+    } else {
+      await logout();
+    }
+  } catch {
+    // Network error — keep showing cached data
   }
 }
 
@@ -172,6 +222,8 @@ async function generateEmail() {
 
   hideError(generateError);
   setGenerating(true);
+  emailOutput.textContent = "";
+  resultBox.classList.remove("hidden");
 
   try {
     const res = await fetch(`${API_BASE}/email/generate`, {
@@ -187,15 +239,38 @@ async function generateEmail() {
         context: customContext.value.trim(),
       }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Generation failed");
 
-    emailOutput.textContent = data.email;
-    resultBox.classList.remove("hidden");
-    currentUser.usage_count = data.usage_count;
-    updateUsageUI();
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Generation failed");
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop();
+
+      for (const part of parts) {
+        if (!part.startsWith("data: ")) continue;
+        const payload = JSON.parse(part.slice(6));
+        if (payload.error) throw new Error(payload.error);
+        if (payload.content) emailOutput.textContent += payload.content;
+        if (payload.done) {
+          currentUser.usage_count = payload.usage_count;
+          updateUsageUI();
+        }
+      }
+    }
   } catch (err) {
     showError(generateError, err.message);
+    resultBox.classList.add("hidden");
   } finally {
     setGenerating(false);
   }
