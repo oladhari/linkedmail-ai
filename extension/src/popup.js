@@ -38,6 +38,7 @@ let currentToken = null;
 let currentProfile = null;
 let currentUser = null;
 let isGenerating = false;
+let checkoutUrl = null;
 
 // --- Init ---
 const loadingScreen = document.getElementById("loading-screen");
@@ -177,10 +178,28 @@ function updateUsageUI() {
   if (isPro) {
     usageText.textContent = "Unlimited emails (Pro)";
     btnUpgrade.classList.add("hidden");
+    checkoutUrl = null;
   } else {
     const used = currentUser.usage_count || 0;
     usageText.textContent = `${used} / 5 emails used this month`;
     btnUpgrade.classList.remove("hidden");
+    if (!checkoutUrl) prefetchCheckout();
+  }
+}
+
+async function prefetchCheckout() {
+  try {
+    const res = await fetch(`${API_BASE}/stripe/checkout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${currentToken}`,
+      },
+    });
+    const data = await res.json();
+    if (res.ok) checkoutUrl = data.url;
+  } catch {
+    // silently ignore — will fall back to on-click fetch
   }
 }
 
@@ -272,19 +291,27 @@ btnCopy.addEventListener("click", () => {
 
 // --- Upgrade ---
 btnUpgrade.addEventListener("click", async () => {
+  if (checkoutUrl) {
+    chrome.tabs.create({ url: checkoutUrl });
+    checkoutUrl = null;
+    return;
+  }
+  // Fallback: fetch on click if prefetch didn't finish
   try {
+    btnUpgrade.disabled = true;
+    btnUpgrade.textContent = "Opening...";
     const res = await fetch(`${API_BASE}/stripe/checkout`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${currentToken}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentToken}` },
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     chrome.tabs.create({ url: data.url });
   } catch (err) {
     showError(generateError, err.message);
+  } finally {
+    btnUpgrade.disabled = false;
+    btnUpgrade.textContent = "Upgrade to Pro — $19/mo";
   }
 });
 
