@@ -215,14 +215,14 @@ async function detectLinkedInProfile() {
 btnGenerate.addEventListener("click", generateEmail);
 
 async function generateEmail() {
-  if (!currentProfile && !await recheckProfile()) return;
-
   const isPro = currentUser?.plan === "pro";
   const used = currentUser?.usage_count || 0;
   if (!isPro && used >= 5) {
     showError(generateError, "Free limit reached (5/month). Upgrade to Pro for unlimited emails.");
     return;
   }
+
+  if (!currentProfile && !await recheckProfile()) return;
 
   hideError(generateError);
   setGenerating(true);
