@@ -222,8 +222,6 @@ async function generateEmail() {
 
   hideError(generateError);
   setGenerating(true);
-  emailOutput.textContent = "";
-  resultBox.classList.remove("hidden");
 
   try {
     const res = await fetch(`${API_BASE}/email/generate`, {
@@ -239,38 +237,15 @@ async function generateEmail() {
         context: customContext.value.trim(),
       }),
     });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Generation failed");
 
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || "Generation failed");
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split("\n\n");
-      buffer = parts.pop();
-
-      for (const part of parts) {
-        if (!part.startsWith("data: ")) continue;
-        const payload = JSON.parse(part.slice(6));
-        if (payload.error) throw new Error(payload.error);
-        if (payload.content) emailOutput.textContent += payload.content;
-        if (payload.done) {
-          currentUser.usage_count = payload.usage_count;
-          updateUsageUI();
-        }
-      }
-    }
+    emailOutput.textContent = data.email;
+    resultBox.classList.remove("hidden");
+    currentUser.usage_count = data.usage_count;
+    updateUsageUI();
   } catch (err) {
     showError(generateError, err.message);
-    resultBox.classList.add("hidden");
   } finally {
     setGenerating(false);
   }
