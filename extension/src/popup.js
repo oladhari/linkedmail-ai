@@ -37,6 +37,7 @@ const btnBackFromUpgrade = document.getElementById("btn-back-from-upgrade");
 let currentToken = null;
 let currentProfile = null;
 let currentUser = null;
+let isGenerating = false;
 
 // --- Init ---
 const loadingScreen = document.getElementById("loading-screen");
@@ -153,9 +154,12 @@ async function refreshUserInBackground() {
       headers: { Authorization: `Bearer ${currentToken}` },
     });
     if (res.ok) {
-      currentUser = await res.json();
-      await chrome.storage.local.set({ cachedUser: currentUser });
-      updateUsageUI();
+      const fresh = await res.json();
+      await chrome.storage.local.set({ cachedUser: fresh });
+      if (!isGenerating) {
+        currentUser = fresh;
+        updateUsageUI();
+      }
     } else {
       await logout();
     }
@@ -222,6 +226,7 @@ async function generateEmail() {
 
   hideError(generateError);
   setGenerating(true);
+  isGenerating = true;
 
   try {
     const res = await fetch(`${API_BASE}/email/generate`, {
@@ -243,10 +248,12 @@ async function generateEmail() {
     emailOutput.textContent = data.email;
     resultBox.classList.remove("hidden");
     currentUser.usage_count = data.usage_count;
+    await chrome.storage.local.set({ cachedUser: { ...currentUser } });
     updateUsageUI();
   } catch (err) {
     showError(generateError, err.message);
   } finally {
+    isGenerating = false;
     setGenerating(false);
   }
 }
