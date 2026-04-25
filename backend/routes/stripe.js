@@ -77,11 +77,19 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
     const session = event.data.object;
     const customerId = session.customer;
     const subscriptionId = session.subscription;
+    const clientRef = session.client_reference_id; // our user ID (from payment link)
 
-    await db.execute({
-      sql: "UPDATE users SET plan = 'pro', stripe_subscription_id = ? WHERE stripe_customer_id = ?",
-      args: [subscriptionId, customerId],
-    });
+    if (clientRef) {
+      await db.execute({
+        sql: "UPDATE users SET plan = 'pro', stripe_customer_id = ?, stripe_subscription_id = ? WHERE id = ?",
+        args: [customerId, subscriptionId, Number(clientRef)],
+      });
+    } else if (customerId) {
+      await db.execute({
+        sql: "UPDATE users SET plan = 'pro', stripe_subscription_id = ? WHERE stripe_customer_id = ?",
+        args: [subscriptionId, customerId],
+      });
+    }
   }
 
   if (event.type === "customer.subscription.deleted") {

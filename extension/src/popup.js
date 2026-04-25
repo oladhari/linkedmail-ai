@@ -290,29 +290,11 @@ btnCopy.addEventListener("click", () => {
 });
 
 // --- Upgrade ---
-btnUpgrade.addEventListener("click", async () => {
-  if (checkoutUrl) {
-    chrome.tabs.create({ url: checkoutUrl });
-    checkoutUrl = null;
-    return;
-  }
-  // Fallback: fetch on click if prefetch didn't finish
-  try {
-    btnUpgrade.disabled = true;
-    btnUpgrade.textContent = "Opening...";
-    const res = await fetch(`${API_BASE}/stripe/checkout`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentToken}` },
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-    chrome.tabs.create({ url: data.url });
-  } catch (err) {
-    showError(generateError, err.message);
-  } finally {
-    btnUpgrade.disabled = false;
-    btnUpgrade.textContent = "Upgrade to Pro — $19/mo";
-  }
+const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/14A5kD2JEaABfDj3rl9fW00";
+
+btnUpgrade.addEventListener("click", () => {
+  const url = `${STRIPE_PAYMENT_LINK}?client_reference_id=${currentUser.id}&prefilled_email=${encodeURIComponent(currentUser.email)}`;
+  chrome.tabs.create({ url });
 });
 
 btnBackFromUpgrade.addEventListener("click", () => show(mainScreen));
