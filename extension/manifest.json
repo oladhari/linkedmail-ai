@@ -3,7 +3,7 @@
   "name": "LinkedMail AI - Cold Email Generator",
   "version": "1.0.0",
   "description": "Generate personalized cold emails from any LinkedIn profile in one click.",
-  "permissions": ["activeTab", "storage", "scripting", "identity"],
+  "permissions": ["activeTab", "storage", "identity"],
   "oauth2": {
     "client_id": "730317401372-lgv9b4gmfmfmph0na13maid8hd1imla0.apps.googleusercontent.com",
     "scopes": ["openid", "email", "profile"]
