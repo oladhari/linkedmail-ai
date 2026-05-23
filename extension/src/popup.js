@@ -161,11 +161,9 @@ async function refreshUserInBackground() {
         currentUser = fresh;
         updateUsageUI();
       }
-    } else {
-      await logout();
     }
   } catch {
-    // Network error — keep showing cached data
+    // Network error or server error — keep showing cached data, JWT is 30d
   }
 }
 

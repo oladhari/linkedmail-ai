@@ -18,7 +18,7 @@ router.post("/generate", requireAuth, async (req, res) => {
   }
 
   const { profile, tone, purpose, context } = req.body;
-  if (!profile) return res.status(400).json({ error: "Profile data required" });
+  if (!profile || typeof profile !== "object") return res.status(400).json({ error: "Profile data required" });
 
   const toneMap = {
     professional: "professional and polished",
@@ -34,16 +34,33 @@ router.post("/generate", requireAuth, async (req, res) => {
     networking: "networking and building a professional connection",
   };
 
+  // Whitelist tone and purpose — never fall back to raw user input
+  const resolvedTone = toneMap[tone] ?? "professional and polished";
+  const resolvedPurpose = purposeMap[purpose] ?? "networking and building a professional connection";
+
+  // Strip control characters and enforce length limits on all injected fields
+  function sanitize(val, maxLen) {
+    if (typeof val !== "string") return "";
+    return val.replace(/[\x00-\x1F\x7F]/g, " ").trim().slice(0, maxLen);
+  }
+
+  const safeContext = sanitize(context, 500);
+  if (safeContext.length === 0 && context) {
+    // context was provided but was non-string — ignore silently
+  }
+
   const profileSummary = [
-    profile.name && `Full Name: ${profile.name}`,
-    profile.currentTitle && `Current Title: ${profile.currentTitle}`,
-    profile.currentCompany && `Current Company: ${profile.currentCompany}`,
-    profile.headline && `LinkedIn Headline: ${profile.headline}`,
-    profile.location && `Location: ${profile.location}`,
-    profile.about && `About/Summary: ${profile.about}`,
-    profile.experiences?.length && `Experience:\n  - ${profile.experiences.join("\n  - ")}`,
-    profile.education && `Education: ${profile.education}`,
-    profile.skills && `Skills: ${profile.skills}`,
+    sanitize(profile.name, 100)        && `Full Name: ${sanitize(profile.name, 100)}`,
+    sanitize(profile.currentTitle, 150) && `Current Title: ${sanitize(profile.currentTitle, 150)}`,
+    sanitize(profile.currentCompany, 150) && `Current Company: ${sanitize(profile.currentCompany, 150)}`,
+    sanitize(profile.headline, 300)    && `LinkedIn Headline: ${sanitize(profile.headline, 300)}`,
+    sanitize(profile.location, 100)    && `Location: ${sanitize(profile.location, 100)}`,
+    sanitize(profile.about, 1000)      && `About/Summary: ${sanitize(profile.about, 1000)}`,
+    Array.isArray(profile.experiences) &&
+      profile.experiences.slice(0, 8).map(e => sanitize(e, 200)).filter(Boolean).length &&
+      `Experience:\n  - ${profile.experiences.slice(0, 8).map(e => sanitize(e, 200)).filter(Boolean).join("\n  - ")}`,
+    sanitize(profile.education, 300)   && `Education: ${sanitize(profile.education, 300)}`,
+    sanitize(profile.skills, 300)      && `Skills: ${sanitize(profile.skills, 300)}`,
   ].filter(Boolean).join("\n");
 
   const prompt = `You are a world-class cold email copywriter. Write a highly personalized cold email using ONLY the real data from the LinkedIn profile below.
@@ -51,9 +68,9 @@ router.post("/generate", requireAuth, async (req, res) => {
 LinkedIn Profile Data:
 ${profileSummary}
 
-Purpose: ${purposeMap[purpose] || purpose}
-Tone: ${toneMap[tone] || tone}
-${context ? `Sender's context (product/reason/company): ${context}` : ""}
+Purpose: ${resolvedPurpose}
+Tone: ${resolvedTone}
+${safeContext ? `Sender's context (product/reason/company): ${safeContext}` : ""}
 
 STRICT RULES:
 1. Use the person's ACTUAL first name (e.g. "Hi Michel," not "Hi [Name],")

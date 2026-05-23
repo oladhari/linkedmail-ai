@@ -1,5 +1,7 @@
 # Environment variables — NEVER commit these
 backend/.env
+backend/.env.local
+backend/.env.*.local
 backend/**/*.db
 backend/**/*.db-shm
 backend/**/*.db-wal
@@ -7,6 +9,19 @@ backend/**/*.db-wal
 # Dependencies
 backend/node_modules/
 
+# Build artifacts
+*.zip
+store-screenshots/
+advertisement/
+
+# Logs
+backend/logs/
+*.log
+npm-debug.log*
+
 # OS
 .DS_Store
 Thumbs.db
+
+# Vercel
+.vercel
