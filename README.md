@@ -172,3 +172,8 @@ Usage count resets automatically every month (handled in auth middleware on each
 | Privacy Policy | [linkedmailai.com/privacy.html](https://www.linkedmailai.com/privacy.html) |
 | Commerce Disclosure | [linkedmailai.com/commerce-disclosure.html](https://www.linkedmailai.com/commerce-disclosure.html) |
 | SCT (特定商取引法) | [linkedmailai.com/sct.html](https://www.linkedmailai.com/sct.html) |
+
+## Railway security recovery
+
+See [SECURITY_RECOVERY.md](SECURITY_RECOVERY.md) for credential rotation,
+production validation, session invalidation, deployment checks and incident closure.
