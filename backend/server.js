@@ -1,4 +1,5 @@
 require("dotenv").config();
+require("./config").validateEnvironment();
 const express = require("express");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
@@ -47,7 +48,7 @@ app.use("/stripe", stripeRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error("Unhandled request error");
   res.status(500).json({ error: "Internal server error" });
 });
 
@@ -60,6 +61,6 @@ initDb()
     });
   })
   .catch((err) => {
-    console.error("Failed to initialize database:", err);
+    console.error("Failed to initialize database");
     process.exit(1);
   });

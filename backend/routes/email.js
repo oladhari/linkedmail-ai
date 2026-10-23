@@ -101,7 +101,7 @@ STRICT RULES:
 
     res.json({ email, usage_count: Number(rs.rows[0].usage_count) });
   } catch (err) {
-    console.error("OpenAI error:", err.message);
+    console.error("OpenAI error:");
     res.status(500).json({ error: "Failed to generate email. Please try again." });
   }
 });

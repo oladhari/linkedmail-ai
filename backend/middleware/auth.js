@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+const { verifyToken } = require("../tokens");
 const { db } = require("../db/database");
 
 module.exports = async function requireAuth(req, res, next) {
@@ -9,7 +9,7 @@ module.exports = async function requireAuth(req, res, next) {
 
   const token = header.slice(7);
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = verifyToken(token);
     const rs = await db.execute({ sql: "SELECT id, email, name, plan, usage_count, usage_reset_at, stripe_customer_id, stripe_subscription_id FROM users WHERE id = ?", args: [payload.userId] });
     const user = rs.rows[0];
     if (!user) return res.status(401).json({ error: "User not found" });

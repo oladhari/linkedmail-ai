@@ -35,7 +35,7 @@ router.post("/checkout", requireAuth, async (req, res) => {
 
     res.json({ url: session.url });
   } catch (err) {
-    console.error("Stripe error:", err.message);
+    console.error("Stripe error:");
     res.status(500).json({ error: "Could not create checkout session" });
   }
 });
@@ -69,8 +69,8 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error("Webhook signature error:", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    console.error("Webhook signature error:");
+    return res.status(400).send("Invalid webhook signature");
   }
 
   if (event.type === "checkout.session.completed") {
